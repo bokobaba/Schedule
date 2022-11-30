@@ -1,7 +1,7 @@
 package com.love.schedule.di
 
-import com.love.schedule.model.schedule.IScheduleActions
-import com.love.schedule.model.schedule.ScheduleActions
+import com.love.schedule.feature_schedule.presentation.view_model.IScheduleState
+import com.love.schedule.feature_schedule.presentation.view_model.ScheduleState
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -14,5 +14,6 @@ abstract class ScheduleScreenModule {
 
     @Binds
     @Singleton
-    abstract fun bindScheduleActions(scheduleActions: ScheduleActions): IScheduleActions
+    abstract fun bindScheduleState(scheduleState: ScheduleState): IScheduleState
+
 }

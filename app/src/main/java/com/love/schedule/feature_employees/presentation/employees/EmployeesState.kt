@@ -3,7 +3,7 @@ package com.love.schedule.model.employee
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.navigation.NavController
-import com.love.schedule.Data
+import com.love.schedule.PreviewData
 import com.love.schedule.feature_employees.domain.model.Employee
 import com.love.schedule.nav_graph.Screen
 import javax.inject.Inject
@@ -54,7 +54,7 @@ class EmployeesState @Inject constructor() : IEmployeesState {
     companion object {
         val previewActions = object : IEmployeesState {
             override val employees: SnapshotStateList<Employee>
-                get() = Data.employees.toMutableStateList()
+                get() = PreviewData.employees.toMutableStateList()
             override var addEmployee: (employee: Employee) -> Unit = {}
             override var deleteEmployee: (employee: Employee) -> Unit = {}
             override var restoreEmployee: () -> Unit = {}

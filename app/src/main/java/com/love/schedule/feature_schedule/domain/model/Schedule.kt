@@ -1,14 +1,18 @@
-package com.love.schedule.model.schedule
+package com.love.schedule.feature_schedule.domain.model
 
-import com.love.schedule.Day
-import java.util.*
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 
+@Entity
 data class Schedule(
-    val id: UUID,
+    @PrimaryKey val id: Int? = null,
     val year: Int,
     val week: Int,
+    val day: Int,
     val employeeId: String,
-    val name: String,
+    val employeeName: String,
+    val start: String,
+    val end: String,
 //    val monday: TimeRange,
 //    val tuesday: TimeRange,
 //    val wednesday: TimeRange,
@@ -16,8 +20,9 @@ data class Schedule(
 //    val friday: TimeRange,
 //    val saturday: TimeRange,
 //    val sunday: TimeRange,
-    val shifts: MutableList<TimeRange> = (1..7).map { TimeRange(null, null) }.toMutableList()
-) {
+//    val shifts: MutableList<TimeRange> = (1..7).map { TimeRange(null, null) }.toMutableList()
+)
+//{
 //    fun shift(day: Day) : TimeRange {
 //        return when(day) {
 //            Day.MONDAY -> {
@@ -43,7 +48,7 @@ data class Schedule(
 //            }
 //        }
 //    }
-}
+//}
 
 data class TimeRange(
     var start: String?,

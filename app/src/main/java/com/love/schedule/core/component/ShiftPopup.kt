@@ -1,4 +1,4 @@
-package com.love.schedule.shared.component
+package com.love.schedule.core.component
 
 import android.util.Log
 import android.widget.NumberPicker
@@ -17,15 +17,14 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
-import com.google.gson.Gson
-import java.time.LocalDateTime
 
 data class ShiftPopupData(
     val editName: Boolean = false,
     val name: String,
     val start: String?,
     val end: String?,
-    val onSaveData: (name: String, start: String, end: String) -> Unit
+    val onSaveData: (name: String, start: String, end: String) -> Unit,
+    val onDelete: (() -> Unit)? = null,
 )
 
 fun timeString(strings: List<String>): String {
@@ -35,13 +34,13 @@ fun timeString(strings: List<String>): String {
 internal const val nameMaxLength = 20
 
 @Composable
-fun ShiftPopup(data: ShiftPopupData?, onDismiss: () -> Unit) {
+fun ShiftPopup(popupData: MutableState<ShiftPopupData?>, onDismiss: () -> Unit) {
     Log.d("ShiftPopup", "init")
-    if (data == null) return
+    val data = popupData.value ?: return
 
     Log.d("ShiftPopup", "data: ${data.start}, ${data.end}")
-    val dataStart = if (data.start == null) listOf("0", "0") else data.start!!.split(":")
-    val dataEnd = if (data.end == null) listOf("0", "0") else data.end!!.split(":")
+    val dataStart = if (data.start == null) listOf("00", "00") else data.start.split(":")
+    val dataEnd = if (data.end == null) listOf("00", "00") else data.end.split(":")
 
     if (dataStart.size < 2 || dataEnd.size < 2) {
         Log.e("ShiftPopup", "invalid time string")
@@ -49,10 +48,15 @@ fun ShiftPopup(data: ShiftPopupData?, onDismiss: () -> Unit) {
     }
 
     var name by remember { mutableStateOf(data.name) }
-    val start: MutableList<String> by remember { mutableStateOf(dataStart.toMutableList()) }
-    val end: MutableList<String> by remember { mutableStateOf(dataEnd.toMutableList()) }
+    val start: MutableList<String> by remember { mutableStateOf(
+        dataStart.map{ String.format("%02d", it.toInt()) }.toMutableList()
+    ) }
+    val end: MutableList<String> by remember { mutableStateOf(
+        dataEnd.map{ String.format("%02d", it.toInt()) }.toMutableList()
+    ) }
 
     val onNameChange = { str: String -> name = str.take(nameMaxLength) }
+    val onSaveData = { data.onSaveData(name, timeString(start), timeString(end)) }
 
     Popup(
         alignment = Alignment.Center,
@@ -69,7 +73,8 @@ fun ShiftPopup(data: ShiftPopupData?, onDismiss: () -> Unit) {
             start = start, end = end,
             onNameChange = onNameChange,
             onDismiss = onDismiss,
-            onSaveData = { data.onSaveData(name, timeString(start), timeString(end)) }
+            onSaveData = onSaveData,
+            onDelete = data.onDelete
         )
     }
 }
@@ -82,7 +87,8 @@ fun PopupContent(
     end: MutableList<String>,
     onNameChange: (String) -> Unit,
     onDismiss: () -> Unit,
-    onSaveData: () -> Unit
+    onSaveData: () -> Unit,
+    onDelete: (() -> Unit)?,
 ) {
     Column(
         modifier = Modifier
@@ -92,7 +98,7 @@ fun PopupContent(
     ) {
         NameField(edit = editName, name = name, onNameChange = onNameChange)
         StartEndSelector(start = start, end = end)
-        ActionButtons(onDismiss = onDismiss, onSaveData = onSaveData)
+        ActionButtons(onDismiss = onDismiss, onSaveData = onSaveData, onDelete = onDelete)
     }
 }
 
@@ -118,7 +124,9 @@ fun NameField(edit: Boolean, name: String, onNameChange: (String) -> Unit) {
 @Composable
 fun StartEndSelector(start: MutableList<String>, end: MutableList<String>) {
     Row(
-        modifier = Modifier.height(150.dp).padding(top = 5.dp, bottom = 5.dp)
+        modifier = Modifier
+            .height(150.dp)
+            .padding(top = 5.dp, bottom = 5.dp)
     ) {
         TimePicker(
             title = "Start",
@@ -144,16 +152,37 @@ fun StartEndSelector(start: MutableList<String>, end: MutableList<String>) {
 @Composable
 fun ActionButtons(
     onDismiss: () -> Unit,
-    onSaveData: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
+    onSaveData: () -> Unit,
+    onDelete: (() -> Unit)?
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(5.dp)
     ) {
-        Button(onClick = onDismiss) {
-            Text(text = "Cancel")
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Button(onClick = onDismiss) {
+                Text(text = "Cancel")
+            }
+            Button(onClick = onSaveData) {
+                Text(text = "OK")
+            }
         }
-        Button(onClick = onSaveData) {
-            Text(text = "OK")
+        if (onDelete != null) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Start
+            ) {
+                Button(
+                    onClick = onDelete,
+                    colors = ButtonDefaults.buttonColors(
+                        backgroundColor = MaterialTheme.colors.error,
+                    )
+                ) {
+                    Text(text = "Delete")
+                }
+            }
         }
     }
 }
@@ -170,7 +199,9 @@ fun RowScope.TimePicker(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            modifier = Modifier.fillMaxWidth().background(Color.DarkGray),
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color.DarkGray),
             textAlign = TextAlign.Center,
             text = title,
             color = Color.Black)
@@ -196,7 +227,7 @@ fun RowScope.NumberPicker(default: Int, max: Int, onValueChange: (String) -> Uni
             modifier = Modifier.width(50.dp),
             factory = { context ->
                 NumberPicker(context).apply {
-                    setOnValueChangedListener { numberPicker, previous, current ->
+                    setOnValueChangedListener { _, _, current ->
                         onValueChange(String.format("%02d", current))
                     }
                     setFormatter {
@@ -221,6 +252,7 @@ fun ShiftPopupPreview() {
         end = mutableListOf("09", "00"),
         onNameChange = {},
         onDismiss = {},
-        onSaveData = {},
+        onSaveData =  {},
+        onDelete = {},
     )
 }

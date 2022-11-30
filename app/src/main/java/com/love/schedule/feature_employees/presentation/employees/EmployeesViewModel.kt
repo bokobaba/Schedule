@@ -21,7 +21,7 @@ import javax.inject.Inject
 @HiltViewModel
 class EmployeesViewModel @Inject constructor(
     private val _repository: IEmployeeRepository,
-    private val _employeeState: IEmployeesState,
+    private val _state: IEmployeesState,
     private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
     private var getEmployeesJob: Job? = null
@@ -29,16 +29,16 @@ class EmployeesViewModel @Inject constructor(
     private var _loading = mutableStateOf(false)
 
     val state: IEmployeesState
-        get() = _employeeState
+        get() = _state
 
     val loading: MutableState<Boolean>
         get() = _loading
 
     init {
         getEmployees()
-        state.addEmployee = { addEmployee(it) }
-        state.deleteEmployee = { deleteEmployee(it) }
-        state.restoreEmployee = { restoreEmployee() }
+        _state.addEmployee = { addEmployee(it) }
+        _state.deleteEmployee = { deleteEmployee(it) }
+        _state.restoreEmployee = { restoreEmployee() }
     }
 
     @Throws(InvalidEmployeeException::class)
@@ -58,7 +58,7 @@ class EmployeesViewModel @Inject constructor(
         viewModelScope.launch {
             _repository.deleteEmployeeInfo(employee)
             recentlyDeletedEmployee = employee
-            _employeeState.cancelDelete()
+            _state.cancelDelete()
         }
     }
 
@@ -75,7 +75,7 @@ class EmployeesViewModel @Inject constructor(
             .onEach { employees ->
                 _loading.value = true
                 Log.d("EmployeesViewModel", "employees: ${Gson().toJson(employees)}")
-                _employeeState.setEmployees(employees)
+                _state.setEmployees(employees)
                 _loading.value = false
             }
             .launchIn(viewModelScope)

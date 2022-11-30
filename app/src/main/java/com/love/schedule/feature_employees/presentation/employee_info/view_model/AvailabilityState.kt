@@ -2,11 +2,11 @@ package com.love.schedule.feature_employees.presentation.employee_info.view_mode
 
 import android.util.Log
 import androidx.compose.runtime.*
-import androidx.compose.runtime.snapshots.SnapshotStateList
 import com.google.gson.Gson
-import com.love.schedule.Data
+import com.love.schedule.PreviewData
 import com.love.schedule.feature_employees.domain.model.Availability
-import com.love.schedule.shared.component.ShiftPopupData
+import com.love.schedule.core.component.ShiftPopupData
+import com.love.schedule.core.util.Days
 import javax.inject.Inject
 
 interface IAvailabilityState {
@@ -35,7 +35,7 @@ class AvailabilityState @Inject constructor() : IAvailabilityState {
         Log.d("AvailabilityState", "setAvailability")
         if (list.isEmpty()) {
             Log.d("setAvailability", "list empty")
-            for (i in 0..6) {
+            Days.values().forEachIndexed { i, _ ->
                 _availability.add(
                     Availability(
                         employeeId = "",
@@ -55,21 +55,21 @@ class AvailabilityState @Inject constructor() : IAvailabilityState {
 
     override fun editAllDay(day: Int, checked: Boolean) {
         Log.d("AvailabilityState", "editAllDay: id = $day, checked = $checked")
-        _availability[day] = _availability[day]?.copy(allDay = checked) ?: return
+        _availability[day] = _availability[day].copy(allDay = checked) ?: return
     }
 
     override fun editEnabled(day: Int, checked: Boolean) {
         Log.d("AvailabilityState", "editEnabled: id = $day, checked = $checked")
-        _availability[day] = _availability[day]?.copy(enabled = checked) ?: return
+        _availability[day] = _availability[day].copy(enabled = checked) ?: return
     }
 
     override fun setPopupData(day: Int, start: String, end: String) {
         _popupData.value = ShiftPopupData(
-            name = Data.days[day],
+            name = Days.get(day),
             start = start,
             end = end,
-            onSaveData = { _, start, end ->
-                editStartEnd(day, start, end)
+            onSaveData = { _, s, e ->
+                editStartEnd(day, s, e)
                 onDismissPopup()
             }
         )
@@ -90,7 +90,7 @@ class AvailabilityState @Inject constructor() : IAvailabilityState {
     companion object {
         val previewState = object : IAvailabilityState {
             override val availability: List<Availability>
-                get() = Data.availability
+                get() = PreviewData.availability
             override val popupData: MutableState<ShiftPopupData?>
                 get() = mutableStateOf(null)
 

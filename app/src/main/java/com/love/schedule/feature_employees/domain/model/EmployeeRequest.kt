@@ -12,3 +12,5 @@ data class EmployeeRequest(
     val end: String,
     val employeeId: String,
 )
+
+class InvalidRequestException(message: String): Exception(message)

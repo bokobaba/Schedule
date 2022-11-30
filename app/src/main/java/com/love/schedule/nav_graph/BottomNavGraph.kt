@@ -4,7 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
-import com.love.schedule.model.schedule.ScheduleViewModel
+import com.love.schedule.feature_schedule.presentation.view_model.ScheduleViewModel
 
 @Composable
 fun BottomNavGraph(navController: NavHostController) {

@@ -1,11 +1,9 @@
 package com.love.schedule.feature_employees.presentation.employee_info
 
 import android.util.Log
-import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
@@ -14,26 +12,21 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.love.schedule.feature_employees.presentation.employee_info.view_model.*
-import com.love.schedule.shared.component.LoadingAnimation
-import kotlinx.coroutines.delay
+import com.love.schedule.core.component.LoadingAnimation
+import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun EmployeeInfoScreen(
@@ -41,43 +34,60 @@ fun EmployeeInfoScreen(
     vm: EmployeeInfoViewModel = hiltViewModel()
 ) {
     Log.d("EmployeeInfoScreen", "")
-//    val vm = hiltViewModel<EmployeeInfoViewModel>()
+
+    val scaffoldState: ScaffoldState = rememberScaffoldState()
+
+    LaunchedEffect(key1 = true) {
+        vm.eventFlow.collectLatest { event ->
+            when (event) {
+                is EmployeeInfoViewModel.UiEvent.ShowSnackbar -> {
+                    scaffoldState.snackbarHostState.showSnackbar(
+                        message = event.message
+                    )
+                }
+                is EmployeeInfoViewModel.UiEvent.SaveNote -> {
+                    navController.navigateUp()
+                }
+                is EmployeeInfoViewModel.UiEvent.Back -> {
+                    navController.navigateUp()
+                }
+            }
+        }
+    }
+
     EmployeeInfo(
-        navController = navController,
         loading = vm.loading,
         state = vm.state,
         availabilityState = vm.availabilityState,
         requestsState = vm.requestsState,
-        newEmployee = vm.newEmployee
+        newEmployee = vm.newEmployee,
+        scaffoldState = scaffoldState
     )
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun EmployeeInfo(
-    navController: NavController,
     loading: MutableState<Boolean> = mutableStateOf(false),
     state: IEmployeeInfoState,
     availabilityState: IAvailabilityState,
     requestsState: IRequestsState,
     newEmployee: Boolean = false,
+    scaffoldState: ScaffoldState = rememberScaffoldState(),
 ) {
     Log.d("EmployeeInfo", "init")
-    val scaffoldState = rememberScaffoldState()
     val scope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(text = if (newEmployee) "New Employee" else "Employee Info") },
-                navigationIcon = { BackButton(navController) }
+                navigationIcon = { BackButton(state.navigateUp) }
             )
         },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
                     state.saveInfo()
-                    navController.popBackStack()
                 },
                 backgroundColor = MaterialTheme.colors.primary
             ) {
@@ -121,10 +131,10 @@ fun EmployeeInfo(
 }
 
 @Composable
-fun BackButton(navController: NavController) {
+fun BackButton(onClick: () -> Unit) {
     Icon(
         modifier = Modifier.clickable {
-            navController.popBackStack()
+            onClick()
         },
         imageVector = Icons.Default.ArrowBack,
         contentDescription = "back"
@@ -263,7 +273,6 @@ fun SaveButton(
 @Composable
 fun EmployeeInfoPreview() {
     EmployeeInfo(
-        navController = rememberNavController(),
         state = EmployeeInfoState.previewState,
         availabilityState = AvailabilityState.previewState,
         requestsState = RequestsState.previewRequestsState,

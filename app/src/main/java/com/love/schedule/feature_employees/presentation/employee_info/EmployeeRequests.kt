@@ -119,7 +119,7 @@ fun RequestDate(
     val datePicker = DatePickerDialog(
         context,
         { _: DatePicker, y: Int, m: Int, d: Int ->
-            onClick(index, "$y-$m-$d")
+            onClick(index, "$y-${m+1}-$d")
         },
         date.year, date.monthValue - 1, date.dayOfMonth
     )

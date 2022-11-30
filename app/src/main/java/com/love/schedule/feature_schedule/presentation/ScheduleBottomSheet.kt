@@ -1,4 +1,4 @@
-package com.love.schedule.screen.schedule
+package com.love.schedule.feature_schedule.presentation
 
 import android.util.Log
 import androidx.compose.foundation.clickable
@@ -14,14 +14,14 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import com.google.gson.Gson
 import com.love.schedule.R
-import com.love.schedule.model.schedule.IScheduleViewModel
-import com.love.schedule.model.schedule.ScheduleViewModel
-import com.love.schedule.model.schedule.Shift
+import com.love.schedule.core.component.LoadingAnimation
+import com.love.schedule.feature_schedule.domain.model.Shift
+import com.love.schedule.feature_schedule.presentation.view_model.IScheduleViewState
+import com.love.schedule.feature_schedule.presentation.view_model.ScheduleState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -33,61 +33,40 @@ object ScheduleSheetConstants {
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun ScheduleBottomSheet(
-    bsState: BottomSheetScaffoldState,
-    vm: IScheduleViewModel,
-    onAddShift: () -> Unit,
-    onEditShift: (Shift) -> Unit,
+    state: IScheduleViewState,
+    shiftsLoading: MutableState<Boolean> = mutableStateOf(false)
 ) {
-    LaunchedEffect(Unit, block = {
-        Log.d("ScheduleScreen", "fetch employees")
-        vm.fetchShifts()
-    })
-    ScheduleBottomSheetContent(
-        bsState = bsState,
-        vm = vm,
-        onAddShift = onAddShift,
-        onEditShift = onEditShift,
-    )
-}
-
-@OptIn(ExperimentalMaterialApi::class)
-@Composable
-fun ScheduleBottomSheetContent(
-    bsState: BottomSheetScaffoldState,
-    vm: IScheduleViewModel,
-    onAddShift: () -> Unit,
-    onEditShift: (Shift) -> Unit,
-) {
-    val coroutineScope = rememberCoroutineScope()
-    var selectedShift: Shift? = vm.selectedShift
-    val onClickRow = { shift: Shift -> vm.selectShift(shift) }
-    val onCancel = { vm.deselectShift() }
     val maxHeight = LocalConfiguration.current.screenHeightDp.dp / 2
-    val listHeight = maxHeight - ScheduleSheetConstants.ACTION_HEIGHT - ScheduleSheetConstants.PEEK_HEIGHT
+
     Column(
         modifier = Modifier.heightIn(min = 0.dp, max = maxHeight)
     ) {
         SheetHandle(
-            bsState = bsState,
-            coroutineScope = coroutineScope,
-            selectedShift = selectedShift,
-            onCancel = onCancel
+            bsState = state.bottomSheetScaffoldState,
+            selectedShift = state.selectedShift,
+            onCancel = state::onCancelSelect
         )
-        ColumnHeaders()
-        Divider()
-        LazyColumn(
-            modifier = Modifier.fillMaxWidth().weight(5f),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            items(vm.shifts) { shift ->
-                ShiftRow(shift, onClick = onClickRow)
-                Divider()
-            }
-        }
-        if (selectedShift == null) {
-            ShiftActionButton("Add New Shift", onAddShift)
+        if (shiftsLoading.value) {
+            LoadingAnimation(modifier = Modifier.fillMaxSize())
         } else {
-            ShiftActionButton(text = "Edit Shift", onClick = { onEditShift(selectedShift) })
+            ColumnHeaders()
+            Divider()
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(5f),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                items(state.shifts) { shift ->
+                    ShiftRow(shift = shift, onClick = state::onShiftClick)
+                    Divider()
+                }
+            }
+            if (state.selectedShift.value == null) {
+                ShiftActionButton(text = "Add New Shift", onClick = state::onAddShift)
+            } else {
+                ShiftActionButton(text = "Edit Shift", onClick = state::onEditShift)
+            }
         }
     }
 }
@@ -97,6 +76,7 @@ fun ShiftRow(
     shift: Shift,
     onClick: (Shift) -> Unit,
 ) {
+    Log.d("ShiftRow", shift.name)
     Row(
         modifier = Modifier.clickable {
             Log.d("ShiftRow", "selected: ${Gson().toJson(shift)}")
@@ -139,8 +119,7 @@ fun RowScope.Cell(text: String, fontSize: TextUnit, fontStyle: FontStyle?) {
 @Composable
 fun SheetHandle(
     bsState: BottomSheetScaffoldState,
-    coroutineScope: CoroutineScope,
-    selectedShift: Shift?,
+    selectedShift: MutableState<Shift?>,
     onCancel: () -> Unit,
     ) {
     Box(
@@ -151,7 +130,6 @@ fun SheetHandle(
     ) {
         ExpandButton(
             bsState = bsState,
-            coroutineScope = coroutineScope,
             selectedShift = selectedShift
         )
         CancelSelectButton(selectedShift = selectedShift, onCancel)
@@ -162,9 +140,9 @@ fun SheetHandle(
 @Composable
 fun ExpandButton(
     bsState: BottomSheetScaffoldState,
-    coroutineScope: CoroutineScope,
-    selectedShift: Shift?,
+    selectedShift: MutableState<Shift?>
 ) {
+    val coroutineScope: CoroutineScope = rememberCoroutineScope()
     Button(
         modifier = Modifier
             .fillMaxWidth()
@@ -177,15 +155,15 @@ fun ExpandButton(
             }
         }) {
         Text(
-            text = selectedShift?.name ?: "Shifts",
+            text = selectedShift.value?.name ?: "Shifts",
             fontSize = MaterialTheme.typography.h5.fontSize
         )
     }
 }
 
 @Composable
-fun CancelSelectButton(selectedShift: Shift?, onCancel: () -> Unit) {
-    if (selectedShift == null) return
+fun CancelSelectButton(selectedShift: MutableState<Shift?>, onCancel: () -> Unit) {
+    if (selectedShift.value == null) return
     Button(
         modifier = Modifier.fillMaxHeight(),
         onClick = onCancel
@@ -200,7 +178,9 @@ fun CancelSelectButton(selectedShift: Shift?, onCancel: () -> Unit) {
 @Composable
 fun ColumnScope.ShiftActionButton(text: String, onClick: () -> Unit) {
     Button(
-        modifier = Modifier.fillMaxWidth().weight(1f),
+        modifier = Modifier
+            .fillMaxWidth()
+            .weight(1f),
         onClick = onClick
     ) {
         Text(text = text)
@@ -211,10 +191,9 @@ fun ColumnScope.ShiftActionButton(text: String, onClick: () -> Unit) {
 @Preview
 @Composable
 fun ScheduleBottomSheetPreview() {
-    ScheduleBottomSheetContent(
-        bsState = rememberBottomSheetScaffoldState(),
-        vm = ScheduleViewModel.previewViewModel,
-        onAddShift = {},
-        onEditShift = {},
+    ScheduleState.previewScheduleState.setBottomSheetScaffoldState(
+        rememberBottomSheetScaffoldState())
+    ScheduleBottomSheet(
+        state = ScheduleState.previewScheduleState
     )
 }

@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface EmployeeDao {
 
+    // Employee
     @Query("SELECT * FROM employee")
     fun getEmployees(): Flow<List<Employee>>
 
@@ -42,6 +43,7 @@ interface EmployeeDao {
     @Query("DELETE FROM employeerequest WHERE employeeId == :id")
     suspend fun deleteRequests(id: String)
 
+    // Join
     @Transaction
     @Query("SELECT * FROM employee WHERE id = :id")
     suspend fun getEmployeeInfo(id: Int): EmployeeInfo?
@@ -51,5 +53,9 @@ interface EmployeeDao {
         deleteEmployee(employee)
         deleteAvailability(employee.employeeId)
         deleteRequests(employee.employeeId)
+        deleteEmployeeSchedules(employee.employeeId)
     }
+
+    @Query("DELETE FROM schedule WHERE employeeId == :id")
+    suspend fun deleteEmployeeSchedules(id: String)
 }

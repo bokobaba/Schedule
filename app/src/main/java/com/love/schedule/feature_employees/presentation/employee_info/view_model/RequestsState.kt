@@ -2,7 +2,7 @@ package com.love.schedule.feature_employees.presentation.employee_info.view_mode
 
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
-import com.love.schedule.Data
+import com.love.schedule.PreviewData
 import com.love.schedule.feature_employees.domain.model.EmployeeRequest
 import javax.inject.Inject
 
@@ -17,7 +17,6 @@ interface IRequestsState {
 }
 
 class RequestsState @Inject constructor() : IRequestsState {
-    //    private val _requests = mutableStateMapOf<Int, EmployeeRequest>()
     private val _requests = mutableStateListOf<EmployeeRequest>()
 
     override val requests: SnapshotStateList<EmployeeRequest>
@@ -57,7 +56,7 @@ class RequestsState @Inject constructor() : IRequestsState {
     companion object {
         val previewRequestsState = object : IRequestsState {
             override val requests: SnapshotStateList<EmployeeRequest>
-                get() = Data.requests.toMutableStateList()
+                get() = PreviewData.requests.toMutableStateList()
 
             override fun editDescription(id: Int, value: String) {}
             override fun editStart(id: Int, value: String) {}

@@ -14,3 +14,5 @@ data class Availability(
     val start: String,
     val end: String,
 )
+
+class InvalidAvailabilityException(message: String): Exception(message)

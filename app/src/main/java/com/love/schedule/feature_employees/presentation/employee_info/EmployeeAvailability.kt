@@ -5,37 +5,22 @@ import androidx.compose.animation.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.Checkbox
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.google.gson.Gson
-import com.love.schedule.Data
-import com.love.schedule.feature_employees.domain.model.Availability
 import com.love.schedule.feature_employees.presentation.employee_info.view_model.AvailabilityState
-import com.love.schedule.feature_employees.presentation.employee_info.view_model.EmployeeInfoState
 import com.love.schedule.feature_employees.presentation.employee_info.view_model.IAvailabilityState
-import com.love.schedule.shared.component.ShiftPopup
+import com.love.schedule.core.component.ShiftPopup
+import com.love.schedule.core.util.Days
 
 val HEADER_HEIGHT = 50.dp
-
-@Composable
-fun EmployeeAvailabilityTab(state: IAvailabilityState) {
-    Log.d("EmployeeAvailabilityTab", "init")
-    EmployeeAvailability(state)
-}
 
 @Composable
 fun EmployeeAvailability(state: IAvailabilityState) {
@@ -69,7 +54,7 @@ fun EmployeeAvailability(state: IAvailabilityState) {
             }
         }
     }
-    ShiftPopup(data = state.popupData.value, state::onDismissPopup)
+    ShiftPopup(popupData = state.popupData, state::onDismissPopup)
 }
 
 @Composable
@@ -81,6 +66,7 @@ fun InfoPrimary(
     onAllDayChange: (Int, Boolean) -> Unit,
 ) {
     Log.d("InfoPrimary", "day = $day")
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -98,7 +84,7 @@ fun InfoPrimary(
         Text(
             modifier = Modifier.weight(1f),
             textAlign = TextAlign.Center,
-            text = Data.days[day],
+            text = Days.get(day),
             fontSize = MaterialTheme.typography.h5.fontSize,
         )
         LabelledCheckbox(

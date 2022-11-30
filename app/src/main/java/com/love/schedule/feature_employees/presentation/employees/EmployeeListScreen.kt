@@ -1,7 +1,6 @@
 package com.love.schedule.feature_employees.presentation.employees
 
 import android.util.Log
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -27,9 +26,9 @@ import com.love.schedule.feature_employees.domain.model.Employee
 import com.love.schedule.model.employee.EmployeesState
 import com.love.schedule.model.employee.IEmployeesState
 import com.love.schedule.nav_graph.Screen
-import com.love.schedule.shared.component.FlipAnimation
-import com.love.schedule.shared.component.FlipState
-import com.love.schedule.shared.component.LoadingAnimation
+import com.love.schedule.core.component.FlipAnimation
+import com.love.schedule.core.component.FlipState
+import com.love.schedule.core.component.LoadingAnimation
 import com.love.schedule.ui.theme.ScheduleTheme
 
 internal val spacing: Dp = 10.dp

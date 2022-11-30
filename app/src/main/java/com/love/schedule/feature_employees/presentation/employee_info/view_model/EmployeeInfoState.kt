@@ -2,8 +2,7 @@ package com.love.schedule.feature_employees.presentation.employee_info.view_mode
 
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
-import com.love.schedule.Data
-import com.love.schedule.feature_employees.domain.model.Employee
+import com.love.schedule.PreviewData
 import javax.inject.Inject
 
 interface IEmployeeInfoState {
@@ -13,6 +12,7 @@ interface IEmployeeInfoState {
     val editEmployeeName: (name: String) -> Unit
     val editEmployeeId: (id: String) -> Unit
     var saveInfo: () -> Unit
+    var navigateUp: () -> Unit
 }
 
 class EmployeeInfoState @Inject constructor() : IEmployeeInfoState {
@@ -35,15 +35,18 @@ class EmployeeInfoState @Inject constructor() : IEmployeeInfoState {
 
     override lateinit var saveInfo: () -> Unit
 
+    override lateinit var navigateUp: () -> Unit
+
     companion object {
         val previewState = object : IEmployeeInfoState {
             override val employeeName: MutableState<String>
-                get() = mutableStateOf(Data.employees[0].name)
+                get() = mutableStateOf(PreviewData.employees[0].name)
             override val employeeId: MutableState<String>
-                get() = mutableStateOf(Data.employees[0].employeeId)
+                get() = mutableStateOf(PreviewData.employees[0].employeeId)
             override val editEmployeeName: (name: String) -> Unit = {}
             override val editEmployeeId: (id: String) -> Unit = {}
             override var saveInfo: () -> Unit = {}
+            override var navigateUp: () -> Unit = {}
         }
     }
 }
