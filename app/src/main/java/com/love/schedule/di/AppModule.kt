@@ -5,6 +5,8 @@ import androidx.room.Room
 import com.love.schedule.core.data.data_source.EmployeeDatabase
 import com.love.schedule.feature_employees.data.repository.EmployeeRepository
 import com.love.schedule.feature_employees.domain.repository.IEmployeeRepository
+import com.love.schedule.feature_rules.data.repository.RulesRepository
+import com.love.schedule.feature_rules.domain.repository.IRulesRepository
 import com.love.schedule.feature_schedule.data.repository.ScheduleRepository
 import com.love.schedule.feature_schedule.domain.repository.IScheduleRepository
 import dagger.Module
@@ -46,5 +48,11 @@ object AppModule {
     @Singleton
     fun provideScheduleRepository(db: EmployeeDatabase): IScheduleRepository {
         return ScheduleRepository(db.scheduleDao)
+    }
+
+    @Provides
+    @Singleton
+    fun provideRulesRepository(db: EmployeeDatabase): IRulesRepository {
+        return RulesRepository(db.rulesDao)
     }
 }
