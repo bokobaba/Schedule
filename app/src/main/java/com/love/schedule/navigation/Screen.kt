@@ -1,4 +1,4 @@
-package com.love.schedule.nav_graph
+package com.love.schedule.navigation
 
 import android.util.Log
 

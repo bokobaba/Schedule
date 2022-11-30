@@ -9,7 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
 import com.love.schedule.feature_employees.domain.model.*
 import com.love.schedule.feature_employees.domain.repository.IEmployeeRepository
-import com.love.schedule.nav_graph.EMPLOYEEINFO_ARGUMENT
+import com.love.schedule.navigation.EMPLOYEEINFO_ARGUMENT
 import com.love.schedule.core.util.Days
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job

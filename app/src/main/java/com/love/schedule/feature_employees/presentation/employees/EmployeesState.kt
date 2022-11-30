@@ -5,7 +5,7 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.navigation.NavController
 import com.love.schedule.PreviewData
 import com.love.schedule.feature_employees.domain.model.Employee
-import com.love.schedule.nav_graph.Screen
+import com.love.schedule.navigation.Screen
 import javax.inject.Inject
 
 interface IEmployeesState {

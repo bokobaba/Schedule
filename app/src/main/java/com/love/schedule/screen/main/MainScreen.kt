@@ -14,8 +14,8 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.love.schedule.nav_graph.BottomBarScreen
-import com.love.schedule.nav_graph.BottomNavGraph
+import com.love.schedule.navigation.BottomBarScreen
+import com.love.schedule.navigation.BottomNavGraph
 
 @Composable
 fun MainScreen() {

@@ -1,10 +1,10 @@
-package com.love.schedule.nav_graph
+package com.love.schedule.navigation
 
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
-import com.love.schedule.screen.rules.RulesScreen
+import com.love.schedule.feature_rules.presentation.RulesScreen
 
 fun NavGraphBuilder.rulesNavGraph(navController: NavHostController) {
     navigation(

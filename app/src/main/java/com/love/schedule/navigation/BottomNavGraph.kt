@@ -1,4 +1,4 @@
-package com.love.schedule.nav_graph
+package com.love.schedule.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.hilt.navigation.compose.hiltViewModel

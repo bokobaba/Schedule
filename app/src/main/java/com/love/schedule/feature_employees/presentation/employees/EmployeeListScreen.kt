@@ -25,7 +25,7 @@ import androidx.navigation.compose.rememberNavController
 import com.love.schedule.feature_employees.domain.model.Employee
 import com.love.schedule.model.employee.EmployeesState
 import com.love.schedule.model.employee.IEmployeesState
-import com.love.schedule.nav_graph.Screen
+import com.love.schedule.navigation.Screen
 import com.love.schedule.core.component.FlipAnimation
 import com.love.schedule.core.component.FlipState
 import com.love.schedule.core.component.LoadingAnimation

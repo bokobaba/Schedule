@@ -1,4 +1,4 @@
-package com.love.schedule.nav_graph
+package com.love.schedule.navigation
 
 import androidx.navigation.*
 import androidx.navigation.compose.composable
