@@ -18,7 +18,7 @@ class RulesRepository(
         return dao.getShifts()
     }
 
-    override fun getRules(): Flow<List<Rule>> {
+    override suspend fun getRules(): List<Rule> {
         return dao.getRules()
     }
 

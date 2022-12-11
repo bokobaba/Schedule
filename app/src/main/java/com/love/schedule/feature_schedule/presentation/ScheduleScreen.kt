@@ -1,9 +1,10 @@
 package com.love.schedule.feature_schedule.presentation
 
+import android.app.DatePickerDialog
 import android.util.Log
+import android.widget.DatePicker
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.*
 import androidx.compose.runtime.*
@@ -16,16 +17,18 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
-import com.love.schedule.core.component.LoadingAnimation
 import com.love.schedule.core.component.ShiftPopup
 import com.love.schedule.core.util.Days
 import com.love.schedule.feature_schedule.presentation.view_model.*
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
-import androidx.compose.runtime.snapshots.SnapshotStateMap
+import androidx.compose.ui.platform.LocalContext
 import com.google.accompanist.pager.rememberPagerState
-import com.google.gson.Gson
 import com.love.schedule.core.component.AnimatedShimmer
+import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.temporal.WeekFields
+import java.util.*
 
 object ScheduleScreenConstants {
     val sidePad: Dp = 30.dp
@@ -34,12 +37,18 @@ object ScheduleScreenConstants {
 
 @Composable
 fun ScheduleScreen(navController: NavController, vm: ScheduleViewModel) {
-    ScheduleList(vm.state, vm.schedulesLoading, vm.shiftsLoading)
+    ScheduleList(
+        onEvent = vm::onEvent,
+        state = vm.state,
+        schedulesLoading = vm.schedulesLoading,
+        shiftsLoading = vm.shiftsLoading,
+    )
 }
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun ScheduleList(
+    onEvent: (ScheduleEvent) -> Unit,
     state: IScheduleViewState,
     schedulesLoading: MutableState<Boolean> = mutableStateOf(false),
     shiftsLoading: MutableState<Boolean> = mutableStateOf(false),
@@ -52,14 +61,15 @@ fun ScheduleList(
 
     ShiftPopup(
         popupData = state.popupData,
-        onDismiss = state::dismissPopup
+        onDismiss = { onEvent(ScheduleEvent.DismissPopup) }
     )
 
     BottomSheetScaffold(
         sheetContent = {
             ScheduleBottomSheet(
                 shiftsLoading = shiftsLoading,
-                state = state
+                state = state,
+                onEvent = onEvent,
             )
         },
         scaffoldState = state.bottomSheetScaffoldState,
@@ -68,10 +78,64 @@ fun ScheduleList(
         sheetGesturesEnabled = false,
         drawerGesturesEnabled = false,
     ) {
-        SchedulePager(
-            loading = schedulesLoading,
-            schedulesForDay = state::scheduleForDay,
-            onScheduleClick = state::onScheduleClick
+        Column(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            WeekButton(week = state.week, year = state.year, onEvent = onEvent)
+            Divider()
+            SchedulePager(
+                loading = schedulesLoading,
+                schedulesForDay = state::scheduleForDay,
+                onEvent = onEvent,
+            )
+        }
+    }
+}
+
+@Composable
+fun WeekButton(
+    year: MutableState<Int>,
+    week: MutableState<Int>,
+    onEvent: (ScheduleEvent) -> Unit
+) {
+    val formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy")
+    val context = LocalContext.current
+    val weekFields: WeekFields = WeekFields.of(Locale.getDefault())
+    val date: LocalDate = if (year.value > 0 && week.value > 0) {
+        LocalDate.now()
+            .with(weekFields.weekBasedYear(),  year.value.toLong())
+            .with(weekFields.weekOfYear(), week.value.toLong())
+            .with(weekFields.dayOfWeek(), 2)
+        // day of week starts on sunday
+    } else
+        LocalDate.now()
+            .with(weekFields.dayOfWeek(), 2)
+
+    val datePicker = DatePickerDialog(
+        context,
+        { _: DatePicker, y: Int, m: Int, d: Int ->
+            onEvent(ScheduleEvent.SelectWeek(y, m, d))
+        },
+        date.year,
+        date.monthValue - 1,
+        date.dayOfMonth,
+    )
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = date.format(formatter)
+        )
+        Button(
+            onClick = { datePicker.show() }
+        ) {
+            Text(text = "Select Week")
+        }
+        Text(
+            text = date.plusDays(6).format(formatter)
         )
     }
 }
@@ -79,9 +143,9 @@ fun ScheduleList(
 @OptIn(ExperimentalPagerApi::class)
 @Composable
 fun SchedulePager(
+    onEvent: (ScheduleEvent) -> Unit,
     loading: MutableState<Boolean>,
     schedulesForDay: (Int) -> SnapshotStateList<EmployeeShift>,
-    onScheduleClick: (Int, Int) -> Unit,
 ) {
     val pagerState = rememberPagerState()
     Log.d("SchedulePager", "init")
@@ -106,7 +170,7 @@ fun SchedulePager(
                     EmployeeSchedules(
                         schedulesForDay = schedulesForDay,
                         day = day,
-                        onScheduleShiftClick = onScheduleClick
+                        onEvent = onEvent,
                     )
                 }
             }
@@ -135,7 +199,7 @@ fun DayTitle(day: Int) {
 fun EmployeeSchedules(
     schedulesForDay: (Int) -> SnapshotStateList<EmployeeShift>,
     day: Int,
-    onScheduleShiftClick: (Int, Int) -> Unit
+    onEvent: (ScheduleEvent) -> Unit,
 ) {
     val list = schedulesForDay(day)
     Log.d("EmployeeSchedules", "init")
@@ -157,7 +221,7 @@ fun EmployeeSchedules(
                     end = s.end,
                     day = day,
                     index = i,
-                    onClick = onScheduleShiftClick
+                    onEvent = onEvent,
                 )
             }
             Divider()
@@ -176,7 +240,8 @@ fun RowScope.EmployeeName(
             .weight(1f)
             .padding(start = ScheduleScreenConstants.sidePad),
         text = name,
-        style = style
+        style = style,
+        maxLines = 1,
     )
 }
 
@@ -187,9 +252,9 @@ fun RowScope.ScheduleShift(
     day: Int = 0,
     index: Int = 0,
     style: TextStyle = MaterialTheme.typography.h6,
-    onClick: (Int, Int) -> Unit
+    onEvent: (ScheduleEvent) -> Unit,
 ) {
-    Log.d("ScheduleShift", "init index = $index")
+    Log.d("ScheduleShift", "init")
     Row(
         modifier = Modifier
             .weight(1f)
@@ -200,7 +265,7 @@ fun RowScope.ScheduleShift(
             modifier = Modifier.fillMaxWidth(1f),
             colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.secondary),
             onClick = {
-                onClick(day, index)
+                onEvent(ScheduleEvent.ScheduleClick(day = day, index = index))
             }
         ) {
             Column(
@@ -218,21 +283,10 @@ fun RowScope.ScheduleShift(
 }
 
 @Composable
-fun SaveButton(
-    onClick: () -> Unit
-) {
-    Button(
-        modifier = Modifier.fillMaxWidth(),
-        onClick = onClick
-    ) {
-        Text("Save")
-    }
-}
-
-@Composable
 @Preview(showBackground = false)
 fun ScheduleScreenPreview() {
     ScheduleList(
+        onEvent = {},
         state = ScheduleState.previewScheduleState,
     )
 }

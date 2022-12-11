@@ -1,5 +1,6 @@
 package com.love.schedule.feature_employees.presentation.employee_info
 
+import android.annotation.SuppressLint
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -65,6 +66,7 @@ fun EmployeeInfoScreen(
     )
 }
 
+@SuppressLint("UnusedMaterialScaffoldPaddingParameter")
 @Composable
 fun EmployeeInfo(
     loading: MutableState<Boolean> = mutableStateOf(false),

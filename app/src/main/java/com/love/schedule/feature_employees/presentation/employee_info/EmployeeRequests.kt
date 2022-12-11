@@ -21,6 +21,7 @@ import com.love.schedule.feature_employees.domain.model.EmployeeRequest
 import com.love.schedule.feature_employees.presentation.employee_info.view_model.IRequestsState
 import com.love.schedule.feature_employees.presentation.employee_info.view_model.RequestsState
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.format.DateTimeParseException
 
 @Composable
@@ -63,6 +64,7 @@ fun RequestItem(
     onEndChange: (Int, String) -> Unit,
 ) {
     Log.d("RequestItem", "init")
+    Log.d("RequestItem", "description = ${request.description}")
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -107,9 +109,17 @@ fun RequestDate(
     var validDate: Boolean = true
     var date: LocalDate = try {
         LocalDate.parse(value)
-    } catch (ex: DateTimeParseException) {
-        validDate = false
-        LocalDate.now()
+    } catch (e: DateTimeParseException) {
+        Log.e("RequestDate", e.message ?: "Invalid LocalDate format: $value")
+        Log.d("RequestData", "trying to parse as LocalDateTime instead...")
+        // server stores dates as dateTime so try to parse that instead
+        try {
+            LocalDateTime.parse(value).toLocalDate()
+        } catch (e: DateTimeParseException) {
+            Log.e("RequestDate", e.message ?: "Invalide LocalDateTime format: $value")
+            validDate = false
+            LocalDate.now()
+        }
     }
     Log.d(
         "RequestDateRange",

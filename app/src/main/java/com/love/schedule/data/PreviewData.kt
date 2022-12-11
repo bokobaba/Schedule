@@ -1,15 +1,19 @@
 package com.love.schedule
 
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.toMutableStateList
 import com.love.schedule.feature_employees.domain.model.Availability
 import com.love.schedule.feature_employees.domain.model.Employee
 import com.love.schedule.feature_employees.domain.model.EmployeeRequest
+import com.love.schedule.feature_rules.domain.model.Condition
+import com.love.schedule.feature_rules.domain.model.ConditionType
+import com.love.schedule.feature_rules.domain.model.Rule
 import com.love.schedule.feature_schedule.domain.model.Shift
 import com.love.schedule.feature_schedule.presentation.view_model.EmployeeShift
 
 object PreviewData {
     val employees = listOf<Employee>(
-        Employee(0, "Josh", "1234567"),
+        Employee(0, "Joshhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh", "1234567"),
         Employee(1, "John", "7654321"),
         Employee(2, "Parker", "6439174"),
     )
@@ -31,59 +35,6 @@ object PreviewData {
             )
         }.toMutableStateList()
     }
-//        listOf<ScheduleColumn>(
-//        ScheduleColumn(
-//            shifts = (0..6).associate { "6439174" to
-//                    EmployeeShift(
-//                        employeeId = "6439174",
-//                        employeeName = "Parker",
-//                        id = 0
-//                    )
-//            }
-//        ),
-//        ScheduleColumn(
-//            2022,
-//            1,
-//            "1234567",
-//            "Josh",
-//            shifts = (0..6).map { EmployeeShift(null,null, null) }.toMutableStateList()
-//        ),
-//        ScheduleColumn(
-//            2022,
-//            1,
-//            "7654321",
-//            "John",
-//            shifts = (0..6).map { EmployeeShift(null,null, null) }.toMutableStateList()
-//        ),
-//        ScheduleRow(
-//            2022,
-//            1,
-//            "7654321",
-//            "John",
-//            shifts = (0..6).map { TimeRange(null, null) }.toMutableStateList()
-//        ),
-//        ScheduleRow(
-//            2022,
-//            1,
-//            "7654321",
-//            "John",
-//            shifts = (0..6).map { TimeRange(null, null) }.toMutableStateList()
-//        ),
-//        ScheduleRow(
-//            2022,
-//            1,
-//            "7654321",
-//            "John",
-//            shifts = (0..6).map { TimeRange(null, null) }.toMutableStateList()
-//        ),
-//        ScheduleRow(
-//            2022,
-//            1,
-//            "7654321",
-//            "John",
-//            shifts = (0..6).map { TimeRange(null, null) }.toMutableStateList()
-//        ),
-//    )
 
     val requests = listOf<EmployeeRequest>(
         EmployeeRequest(
@@ -118,5 +69,16 @@ object PreviewData {
             start = "09:00",
             end = "05:00",
         )
+    }
+
+    val rules = (0..4).map {
+        val rule = Rule(
+            id = it,
+            name = "Rule $it",
+            priority = it,
+            status = it % 2 == 0,
+            rules = "",
+        )
+        return@map rule
     }
 }

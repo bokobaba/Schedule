@@ -8,13 +8,12 @@ import com.love.schedule.feature_employees.domain.model.Employee
 import com.love.schedule.navigation.Screen
 import javax.inject.Inject
 
-interface IEmployeesState {
+interface IEmployeesViewState {
     val employees: SnapshotStateList<Employee>
-    var addEmployee: (employee: Employee) -> Unit
-    var deleteEmployee: (employee: Employee) -> Unit
-    var restoreEmployee: () -> Unit
     val employeeToDelete: MutableState<Employee?>
+}
 
+interface IEmployeesState: IEmployeesViewState {
     fun setEmployees(employees: List<Employee>)
     fun onSelectEmployee(employee: Employee, navController: NavController)
     fun onLongPressEmployee(employee: Employee)
@@ -31,9 +30,6 @@ class EmployeesState @Inject constructor() : IEmployeesState {
     override val employeeToDelete: MutableState<Employee?>
         get() = _employeeToDelete
 
-    override var addEmployee: (employee: Employee) -> Unit = {}
-    override var deleteEmployee: (employee: Employee) -> Unit = {}
-    override var restoreEmployee: () -> Unit = {}
     override fun setEmployees(employees: List<Employee>) {
         _employees.clear()
         _employees.addAll(employees)
@@ -52,20 +48,11 @@ class EmployeesState @Inject constructor() : IEmployeesState {
     }
 
     companion object {
-        val previewActions = object : IEmployeesState {
+        val previewState = object : IEmployeesViewState {
             override val employees: SnapshotStateList<Employee>
                 get() = PreviewData.employees.toMutableStateList()
-            override var addEmployee: (employee: Employee) -> Unit = {}
-            override var deleteEmployee: (employee: Employee) -> Unit = {}
-            override var restoreEmployee: () -> Unit = {}
             override val employeeToDelete: MutableState<Employee?>
                 get() = mutableStateOf(null)
-
-            override fun setEmployees(employees: List<Employee>) {}
-            override fun onSelectEmployee(employee: Employee, navController: NavController) {}
-            override fun onLongPressEmployee(employee: Employee) {}
-            override fun cancelDelete() {}
-
         }
     }
 

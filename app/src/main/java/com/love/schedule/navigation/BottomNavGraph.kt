@@ -8,7 +8,6 @@ import com.love.schedule.feature_schedule.presentation.view_model.ScheduleViewMo
 
 @Composable
 fun BottomNavGraph(navController: NavHostController) {
-//    val employeeVm = hiltViewModel<EmployeesViewModel>()
     val scheduleVm = hiltViewModel<ScheduleViewModel>()
     NavHost(
         navController = navController,
@@ -18,5 +17,6 @@ fun BottomNavGraph(navController: NavHostController) {
         scheduleNavGraph(navController = navController, scheduleVm)
         employeesNavGraph(navController = navController)
         rulesNavGraph(navController = navController)
+        accountNavGraph(navController = navController)
     }
 }

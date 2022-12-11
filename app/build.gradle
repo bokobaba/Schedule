@@ -5,12 +5,25 @@ plugins {
     id 'dagger.hilt.android.plugin'
 }
 
+def auth0PropertiesFile = rootProject.file("auth0.properties")
+def auth0Properties = new Properties()
+auth0Properties.load(new FileInputStream(auth0PropertiesFile))
+def clientId = auth0Properties['AUTH0_CLIENTID']
+def domain = auth0Properties['AUTH0_DOMAIN']
+
+def auth0PropertiesTestFile = rootProject.file("auth0Test.properties")
+def auth0TestProperties = new Properties()
+auth0TestProperties.load(new FileInputStream(auth0PropertiesTestFile))
+def testClientId = auth0TestProperties['AUTH0_TEST_CLIENTID']
+def testClientSecret = auth0TestProperties['AUTH0_TEST_CLIENT_SECRET']
+def testAudience = auth0TestProperties['AUTH0_TEST_AUDIENCE']
+
 android {
     compileSdk 33
 
     defaultConfig {
         applicationId "com.love.schedule"
-        minSdk 21
+        minSdk 24
         targetSdk 33
         versionCode 1
         versionName "1.0"
@@ -19,12 +32,25 @@ android {
         vectorDrawables {
             useSupportLibrary true
         }
+
+        manifestPlaceholders = [auth0Domain: "@string/com_auth0_domain", auth0Scheme: "demo"]
+        buildConfigField("String", "AUTH0_DOMAIN", domain)
+        buildConfigField("String", "AUTH0_CLIENTID", clientId)
+
+        buildConfigField("String", "AUTH0_TEST_CLIENTID", testClientId)
+        buildConfigField("String", "AUTH0_TEST_CLIENT_SECRET", testClientSecret)
+        buildConfigField("String", "AUTH0_TEST_AUDIENCE", testAudience)
     }
 
     buildTypes {
         release {
+            manifestPlaceholders = [usesCleartextTraffic:"false"]
+
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            manifestPlaceholders = [usesCleartextTraffic:"true"]
         }
     }
     compileOptions {
@@ -53,7 +79,7 @@ dependencies {
 
     implementation 'androidx.core:core-ktx:1.9.0'
     implementation "androidx.compose.ui:ui"
-    implementation "androidx.compose.material:material"
+    implementation "androidx.compose.material:material:1.3.1"
     implementation "androidx.compose.ui:ui-tooling-preview"
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.5.1'
     implementation 'androidx.activity:activity-compose:1.6.1'
@@ -65,7 +91,7 @@ dependencies {
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.4'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.0'
-    androidTestImplementation "androidx.compose.ui:ui-test-junit4"
+    androidTestImplementation 'androidx.compose.ui:ui-test-junit4:1.3.1'
     debugImplementation 'androidx.compose.ui:ui-tooling:1.3.1'
     implementation "androidx.navigation:navigation-compose:$rootProject.composeNavigationVersion"
     implementation "com.google.code.gson:gson:2.10"
@@ -99,10 +125,22 @@ dependencies {
     implementation 'com.squareup.retrofit2:retrofit:2.9.0'
     implementation 'com.squareup.okhttp3:okhttp:5.0.0-alpha.10'
 
+    // JSON Converter
+    implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
+
     // Room
     implementation "androidx.room:room-runtime:2.4.3"
     kapt "androidx.room:room-compiler:2.4.3"
 
     // Kotlin Extensions and Coroutines support for Room
     implementation "androidx.room:room-ktx:2.4.3"
+
+    // Flow Layouts
+    implementation 'com.google.accompanist:accompanist-flowlayout:0.28.0'
+
+    // Auth0
+    implementation 'com.auth0.android:auth0:2.+'
+
+    // Preferences DataStore
+    implementation 'androidx.datastore:datastore-preferences:1.0.0'
 }

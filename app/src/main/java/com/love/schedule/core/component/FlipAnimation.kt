@@ -45,7 +45,6 @@ fun FlipAnimation(
                 cameraDistance = 12f * density
             },
     ) {
-        Log.d("Animation", "rotation = $rotation")
         if (rotation <= 90f) {
             Box(
                 modifier = frontModifier

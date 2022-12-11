@@ -16,17 +16,14 @@ import javax.inject.Inject
 
 @OptIn(ExperimentalMaterialApi::class)
 interface IScheduleViewState {
+    val week: MutableState<Int>
+    val year: MutableState<Int>
     val shifts: SnapshotStateList<Shift>
     val bottomSheetScaffoldState: BottomSheetScaffoldState
     val popupData: MutableState<ShiftPopupData?>
     val selectedShift: MutableState<Shift?>
 
     fun dismissPopup()
-    fun onScheduleClick(day: Int, index: Int)
-    fun onShiftClick(shift: Shift)
-    fun onCancelSelect()
-    fun onAddShift()
-    fun onEditShift()
     fun setBottomSheetScaffoldState(bsState: BottomSheetScaffoldState)
     fun scheduleForDay(day: Int): SnapshotStateList<EmployeeShift>
 }
@@ -37,14 +34,18 @@ interface IScheduleState : IScheduleViewState {
     var insertSchedule: (Int, Int, Schedule) -> Unit
     var deleteSchedule: (Int) -> Unit
     var deleteShift: (Shift) -> Unit
-    val week: Int
-    val year: Int
 
+    fun onScheduleClick(day: Int, index: Int, onSaveData: (Schedule) -> Unit, onDelete: (Int) -> Unit)
+    fun onShiftClick(shift: Shift)
+    fun onCancelSelect()
+    fun onAddShift(onSaveData: (Shift) -> Unit)
+    fun onEditShift(onSaveData: (Shift) -> Unit, onDelete: (Shift) -> Unit)
     fun setShifts(list: List<Shift>)
     fun setSchedules(list: List<EmployeeSchedules>)
     fun addShift(shift: Shift)
     fun addSchedule(day: Int, index: Int, schedule: Schedule)
     fun deleteShift(shift: Shift)
+    fun selectWeek(year: Int, month: Int, day: Int)
 }
 
 @OptIn(ExperimentalMaterialApi::class)
@@ -59,8 +60,8 @@ class ScheduleState @Inject constructor() : IScheduleState {
     private lateinit var _bottomSheetScaffoldState: BottomSheetScaffoldState
 
     private val _selectedShift = mutableStateOf<Shift?>(null)
-    private var _year = -1
-    private var _week = -1
+    private var _year = mutableStateOf(-1)
+    private var _week = mutableStateOf(-1)
 
     override lateinit var saveSchedule: (schedule: Schedule) -> Unit
     override lateinit var insertSchedule: (Int, Int, Schedule) -> Unit
@@ -68,9 +69,9 @@ class ScheduleState @Inject constructor() : IScheduleState {
     override lateinit var deleteShift: (Shift) -> Unit
     override lateinit var deleteSchedule: (Int) -> Unit
 
-    override val week: Int
+    override val week: MutableState<Int>
         get() = _week
-    override val year: Int
+    override val year: MutableState<Int>
         get() = _year
 
     private val monday = mutableStateMapOf<String, EmployeeShift>()
@@ -152,21 +153,24 @@ class ScheduleState @Inject constructor() : IScheduleState {
         ))
     }
 
-    override fun onScheduleClick(day: Int, index: Int) {
+    override fun onScheduleClick(
+        day: Int,
+        index: Int,
+        onSaveData: (Schedule) -> Unit,
+        onDelete: (Int) -> Unit,
+    ) {
         Log.d("ScheduleState", "onScheduleClick index = $index, day = $day")
         if (index > _schedules[day].size) return
         val employeeShift: EmployeeShift = _schedules[day][index]
         val assignShift = _selectedShift.value
         if (assignShift != null) {
-            insertSchedule(
-                day,
-                index,
+            onSaveData(
                 Schedule(
                     id = employeeShift.id,
                     employeeId = employeeShift.employeeId,
                     employeeName = employeeShift.employeeName,
-                    year = _year,
-                    week = _week,
+                    year = _year.value,
+                    week = _week.value,
                     day = day,
                     start = assignShift.start,
                     end = assignShift.end
@@ -179,15 +183,13 @@ class ScheduleState @Inject constructor() : IScheduleState {
                 end = employeeShift.end,
                 onSaveData = { _, start, end ->
                     Log.d("onShiftClick", "saveData: day = $day, start = $start, end = $end")
-                    insertSchedule(
-                        day,
-                        index,
+                    onSaveData(
                         Schedule(
                             id = employeeShift.id,
                             employeeId = employeeShift.employeeId,
                             employeeName = employeeShift.employeeName,
-                            year = _year,
-                            week = _week,
+                            year = _year.value,
+                            week = _week.value,
                             day = day,
                             start = start,
                             end = end
@@ -197,6 +199,7 @@ class ScheduleState @Inject constructor() : IScheduleState {
                 },
                 onDelete = if (employeeShift.id != null) {
                     {
+                        onDelete(employeeShift.id)
                         onDeleteSchedule(day = day, index = index, id = employeeShift.id)
                         dismissPopup()
                     }
@@ -214,7 +217,10 @@ class ScheduleState @Inject constructor() : IScheduleState {
         _selectedShift.value = null
     }
 
-    override fun onEditShift() {
+    override fun onEditShift(
+        onSaveData: (Shift) -> Unit,
+        onDelete: (Shift) -> Unit,
+    ) {
         val selected = _selectedShift.value
         if (selected != null) {
             setPopupData(ShiftPopupData(
@@ -223,17 +229,21 @@ class ScheduleState @Inject constructor() : IScheduleState {
                 start = selected.start,
                 end = selected.end,
                 onSaveData = { name, start, end ->
-                    insertShift(Shift(name = name, start = start, end = end))
+                    val shift: Shift = selected.copy(name = name, start = start, end = end)
+                    onSaveData(shift)
+                    addShift(shift)
+                    dismissPopup()
                 },
                 onDelete = {
-                    onDeleteShift(selected)
+                    onDelete(selected)
+                    deleteShift(selected)
                     dismissPopup()
                 }
             ))
         }
     }
 
-    override fun onAddShift() {
+    override fun onAddShift(onSaveData: (Shift) -> Unit) {
         Log.d("ScheduleState", "onAddShift")
         setPopupData(ShiftPopupData(
             editName = true,
@@ -241,8 +251,7 @@ class ScheduleState @Inject constructor() : IScheduleState {
             start = "09:00",
             end = "05:00",
             onSaveData = { name, start, end ->
-                Log.d("ScheduleState", "onSaveData")
-                insertShift(Shift(name = name, start = start, end = end))
+                onSaveData(Shift(name = name, start = start, end = end))
                 dismissPopup()
             }
         ))
@@ -257,14 +266,10 @@ class ScheduleState @Inject constructor() : IScheduleState {
             end = null,
         )
     }
-
-    fun onDeleteShift(shift: Shift) {
-        deleteShift(shift)
-    }
-
     override fun addSchedule(day: Int, index: Int, schedule: Schedule) {
         Log.d("ScheduleState", "updating ${schedule.employeeName}")
         _schedules[day][index] = _schedules[day][index].copy(
+            id = schedule.id,
             employeeName = schedule.employeeName,
             start = schedule.start,
             end = schedule.end,
@@ -284,6 +289,14 @@ class ScheduleState @Inject constructor() : IScheduleState {
             _shifts.remove(shift.id)
     }
 
+    override fun selectWeek(year: Int, month: Int, day: Int) {
+        Log.d("selectWeek", "year = $year, month = $month, day = $day")
+        val calendar: Calendar = Calendar.getInstance()
+        calendar.set(year, month, day)
+        _year.value = calendar.get(Calendar.YEAR)
+        _week.value = calendar.get(Calendar.WEEK_OF_YEAR)
+    }
+
     companion object {
         val previewScheduleState = object : IScheduleViewState {
             private lateinit var _bottomSheetScaffoldState: BottomSheetScaffoldState
@@ -295,17 +308,15 @@ class ScheduleState @Inject constructor() : IScheduleState {
                 get() = mutableStateOf(null)
             override val selectedShift: MutableState<Shift?>
                 get() = mutableStateOf(null)
+            override val week: MutableState<Int>
+                get() = mutableStateOf(-1)
+            override val year: MutableState<Int>
+                get() = mutableStateOf(-1)
 
             override fun dismissPopup() {}
-            override fun onScheduleClick(day: Int, index: Int) {}
-            override fun onShiftClick(shift: Shift) {}
-            override fun onCancelSelect() {}
-            override fun onAddShift() {}
-            override fun onEditShift() {}
             override fun setBottomSheetScaffoldState(bsState: BottomSheetScaffoldState) {
                 _bottomSheetScaffoldState = bsState
             }
-
             override fun scheduleForDay(day: Int): SnapshotStateList<EmployeeShift> {
                 return PreviewData.schedules[day]
             }

@@ -19,7 +19,7 @@ interface RulesDao {
     fun getShifts(): Flow<List<Shift>>
 
     @Query("SELECT * FROM rule")
-    fun getRules(): Flow<List<Rule>>
+    suspend fun getRules(): List<Rule>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertRule(vararg rule: Rule): List<Long>

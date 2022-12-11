@@ -2,7 +2,6 @@ package com.love.schedule.navigation
 
 import android.util.Log
 
-//const val EMPLOYEEINFO_ARGUMENT = "employeeId"
 const val EMPLOYEEINFO_ARGUMENT = "employeeId"
 const val ROOT_GRAPH_ROUTE = "root"
 const val EMPLOYEES_GRAPH_ROUTE = "employees_root"
@@ -14,6 +13,9 @@ const val SCHEDULE_ROUTE = "Schedule"
 
 const val RULES_GRAPH_ROUTE = "rules_root"
 const val RULES_ROUTE = "Rules"
+
+const val ACCOUNT_GRAPH_ROUTE = "account_root"
+const val ACCOUNT_ROUTE = "Account"
 
 
 sealed class Screen(val route: String) {
@@ -31,4 +33,6 @@ sealed class Screen(val route: String) {
     object Schedule: Screen(route = SCHEDULE_ROUTE)
 
     object Rules: Screen(route = RULES_ROUTE)
+
+    object Account: Screen(route = ACCOUNT_ROUTE)
 }

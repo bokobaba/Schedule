@@ -28,6 +28,7 @@ abstract class EmployeeDatabase : RoomDatabase() {
     abstract val employeeDao: EmployeeDao
     abstract val scheduleDao: ScheduleDao
     abstract val rulesDao: RulesDao
+    abstract val apiDao: ScheduleApiDao
 
     companion object {
         const val DATABASE_NAME = "employees_db"

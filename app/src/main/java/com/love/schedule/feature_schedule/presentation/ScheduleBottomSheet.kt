@@ -21,6 +21,7 @@ import com.love.schedule.R
 import com.love.schedule.core.component.LoadingAnimation
 import com.love.schedule.feature_schedule.domain.model.Shift
 import com.love.schedule.feature_schedule.presentation.view_model.IScheduleViewState
+import com.love.schedule.feature_schedule.presentation.view_model.ScheduleEvent
 import com.love.schedule.feature_schedule.presentation.view_model.ScheduleState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -34,7 +35,8 @@ object ScheduleSheetConstants {
 @Composable
 fun ScheduleBottomSheet(
     state: IScheduleViewState,
-    shiftsLoading: MutableState<Boolean> = mutableStateOf(false)
+    shiftsLoading: MutableState<Boolean> = mutableStateOf(false),
+    onEvent: (ScheduleEvent) -> Unit,
 ) {
     val maxHeight = LocalConfiguration.current.screenHeightDp.dp / 2
 
@@ -44,7 +46,7 @@ fun ScheduleBottomSheet(
         SheetHandle(
             bsState = state.bottomSheetScaffoldState,
             selectedShift = state.selectedShift,
-            onCancel = state::onCancelSelect
+            onEvent = onEvent,
         )
         if (shiftsLoading.value) {
             LoadingAnimation(modifier = Modifier.fillMaxSize())
@@ -58,14 +60,20 @@ fun ScheduleBottomSheet(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 items(state.shifts) { shift ->
-                    ShiftRow(shift = shift, onClick = state::onShiftClick)
+                    ShiftRow(shift = shift, onEvent = onEvent)
                     Divider()
                 }
             }
             if (state.selectedShift.value == null) {
-                ShiftActionButton(text = "Add New Shift", onClick = state::onAddShift)
+                ShiftActionButton(
+                    text = "Add New Shift",
+                    onClick = { onEvent(ScheduleEvent.AddShift) }
+                )
             } else {
-                ShiftActionButton(text = "Edit Shift", onClick = state::onEditShift)
+                ShiftActionButton(
+                    text = "Edit Shift",
+                    onClick = { onEvent(ScheduleEvent.EditShift) }
+                )
             }
         }
     }
@@ -74,13 +82,12 @@ fun ScheduleBottomSheet(
 @Composable
 fun ShiftRow(
     shift: Shift,
-    onClick: (Shift) -> Unit,
+    onEvent: (ScheduleEvent) -> Unit,
 ) {
     Log.d("ShiftRow", shift.name)
     Row(
         modifier = Modifier.clickable {
-            Log.d("ShiftRow", "selected: ${Gson().toJson(shift)}")
-            onClick.invoke(shift)
+            onEvent(ScheduleEvent.ShiftClick(shift))
         }
     ) {
         val fontSize = MaterialTheme.typography.h5.fontSize
@@ -120,7 +127,7 @@ fun RowScope.Cell(text: String, fontSize: TextUnit, fontStyle: FontStyle?) {
 fun SheetHandle(
     bsState: BottomSheetScaffoldState,
     selectedShift: MutableState<Shift?>,
-    onCancel: () -> Unit,
+    onEvent: (ScheduleEvent) -> Unit,
     ) {
     Box(
         modifier = Modifier
@@ -132,7 +139,7 @@ fun SheetHandle(
             bsState = bsState,
             selectedShift = selectedShift
         )
-        CancelSelectButton(selectedShift = selectedShift, onCancel)
+        CancelSelectButton(selectedShift = selectedShift, onEvent = onEvent)
     }
 }
 
@@ -162,11 +169,11 @@ fun ExpandButton(
 }
 
 @Composable
-fun CancelSelectButton(selectedShift: MutableState<Shift?>, onCancel: () -> Unit) {
+fun CancelSelectButton(selectedShift: MutableState<Shift?>, onEvent: (ScheduleEvent) -> Unit) {
     if (selectedShift.value == null) return
     Button(
         modifier = Modifier.fillMaxHeight(),
-        onClick = onCancel
+        onClick = { onEvent(ScheduleEvent.CancelSelect) }
     ) {
         Icon(
             painter = painterResource(id = R.drawable.ic_shift_select_cancel),
@@ -194,6 +201,7 @@ fun ScheduleBottomSheetPreview() {
     ScheduleState.previewScheduleState.setBottomSheetScaffoldState(
         rememberBottomSheetScaffoldState())
     ScheduleBottomSheet(
-        state = ScheduleState.previewScheduleState
+        state = ScheduleState.previewScheduleState,
+        onEvent = {},
     )
 }

@@ -1,4 +1,4 @@
-package com.love.schedule.screen.main
+package com.love.schedule.feature_main.presentation
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.RowScope
@@ -8,17 +8,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.love.schedule.feature_account.presentation.AccountViewModel
 import com.love.schedule.navigation.BottomBarScreen
 import com.love.schedule.navigation.BottomNavGraph
 
 @Composable
-fun MainScreen() {
+fun MainScreen(vm: AccountViewModel = hiltViewModel()) {
     val navController = rememberNavController()
     Scaffold(
         bottomBar = { BottomBar(navController = navController) }
@@ -35,6 +37,7 @@ fun BottomBar(navController: NavHostController) {
         BottomBarScreen.Schedule,
         BottomBarScreen.Employees,
         BottomBarScreen.Rules,
+        BottomBarScreen.Account,
     )
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
@@ -58,7 +61,7 @@ fun RowScope.AddItem(
     BottomNavigationItem(
         label = { Text(text = screen.title) },
         unselectedContentColor = LocalContentColor.current.copy(alpha = ContentAlpha.disabled),
-        selectedContentColor = MaterialTheme.colors.primary,
+//        selectedContentColor = MaterialTheme.colors.primary,
         icon = {
             Icon(
                 painter = painterResource(id = screen.icon),

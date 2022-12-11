@@ -1,5 +1,7 @@
 package com.love.schedule.navigation
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Face
 import com.love.schedule.R
 
 sealed class BottomBarScreen(
@@ -23,6 +25,12 @@ sealed class BottomBarScreen(
         route = SCHEDULE_ROUTE,
         icon = R.drawable.ic_schedule,
         title = "Schedule"
+    )
+
+    object Account: BottomBarScreen(
+        route = ACCOUNT_ROUTE,
+        icon = R.drawable.ic_account,
+        title = "Account"
     )
 }
 

@@ -10,7 +10,7 @@ interface IRulesRepository {
 
     fun getShifts(): Flow<List<Shift>>
 
-    fun getRules(): Flow<List<Rule>>
+    suspend fun getRules(): List<Rule>
 
     suspend fun insertRule(vararg rule: Rule): List<Long>
 

@@ -3,4 +3,6 @@
     <string name="title_activity_employee_info">EmployeeInfo</string>
     <string name="tab_text_1">Tab 1</string>
     <string name="tab_text_2">Tab 2</string>
+    <string name="com_auth0_domain">dev-0yfu4fcd.us.auth0.com</string>
+    <string name="com_auth0_clientId">BAF82W4OECdfTGbeyQLdekKSsSUCezjX</string>
 </resources>

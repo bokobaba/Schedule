@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
+import com.love.schedule.feature_employees.domain.model.Employee
 import com.love.schedule.feature_schedule.domain.model.EmployeeSchedules
 import com.love.schedule.feature_schedule.domain.model.Schedule
 import com.love.schedule.feature_schedule.domain.model.Shift
@@ -27,6 +28,7 @@ class ScheduleViewModel @Inject constructor(
     private var _shiftsLoading = mutableStateOf(false)
     private var _getSchedulesJob: Job? = null
     private var _getShiftsJob: Job? = null
+    private lateinit var _employees: List<Employee>
 
     val state: IScheduleViewState
         get() = _state
@@ -35,47 +37,62 @@ class ScheduleViewModel @Inject constructor(
     val shiftsLoading: MutableState<Boolean>
         get() = _shiftsLoading
 
-//    fun saveSchedules(id: UUID, updateShifts: List<TimeRange>) {
-//        _schedules[id]?.copy(shifts = updateShifts)
-//    }
-
     init {
         Log.d("ScheduleViewModel", "init")
         getSchedules()
         getShifts()
-
-        _state.saveSchedule = { saveSchedule(it) }
-        _state.insertSchedule = { day, index, schedule ->
-            insertSchedule(day, index, schedule)
-        }
-        _state.deleteSchedule = { id ->
-            deleteSchedule(id)
-        }
-        _state.insertShift = { insertShift(it) }
-        _state.deleteShift = { deleteShift(it) }
     }
 
-    private fun saveSchedule(schedule: Schedule) {
-        Log.d("ScheduleViewModel", "saving schedule...")
+    fun onEvent(event: ScheduleEvent) {
+        when (event) {
+            ScheduleEvent.AddShift -> {
+                _state.onAddShift(onSaveData = { insertShift(it) })
+            }
+            ScheduleEvent.CancelSelect -> _state.onCancelSelect()
+            ScheduleEvent.DismissPopup -> _state.dismissPopup()
+            ScheduleEvent.EditShift -> {
+                _state.onEditShift(
+                    onSaveData = { insertShift(it) },
+                    onDelete = { deleteShift(it) }
+                )
+            }
+            is ScheduleEvent.ScheduleClick -> {
+                _state.onScheduleClick(day = event.day, index = event.index,
+                    onSaveData = { insertSchedule(event.day, event.index, it) },
+                    onDelete = { deleteSchedule(it) }
+                )
+            }
+            is ScheduleEvent.ShiftClick -> _state.onShiftClick(event.shift)
+            is ScheduleEvent.SelectWeek -> {
+                _state.selectWeek(event.year, event.month, event.day)
+                getSchedulesForWeek()
+            }
+        }
     }
 
     private fun getSchedules() {
         _schedulesLoading.value = true
         _getSchedulesJob?.cancel()
         _getSchedulesJob = _repository.getEmployees().onEach { employees ->
-            viewModelScope.launch {
-                delay(1000)
-                Log.d("ScheduleViewModel", "getschedules")
-                val schedules: List<Schedule> = _repository.getSchedules(_state.week, _state.year)
-                _state.setSchedules(employees.map { e ->
-                    EmployeeSchedules(
-                        employee = e,
-                        schedules = schedules.filter { it.employeeId == e.employeeId }
-                    )
-                })
-                _schedulesLoading.value = false
-            }
+            _employees = employees
+            getSchedulesForWeek()
         }.launchIn(viewModelScope)
+    }
+
+    private fun getSchedulesForWeek() {
+        _schedulesLoading.value = true
+        viewModelScope.launch {
+            Log.d("ScheduleViewModel", "getschedules")
+            val schedules: List<Schedule> =
+                _repository.getSchedules(_state.week.value, _state.year.value)
+            _state.setSchedules(_employees.map { e ->
+                EmployeeSchedules(
+                    employee = e,
+                    schedules = schedules.filter { it.employeeId == e.employeeId }
+                )
+            })
+            _schedulesLoading.value = false
+        }
     }
 
     private fun getShifts() {
@@ -93,11 +110,13 @@ class ScheduleViewModel @Inject constructor(
         Log.d("ScheduleViewModel", "insertShift: ${Gson().toJson(schedule)}")
         viewModelScope.launch {
             val id = _repository.insertSchedule(schedule)[0]
-            _state.addSchedule(
-                day = day,
-                index = index,
-                schedule = schedule.copy(id = id)
-            )
+            if (schedule.id == null) {
+                _state.addSchedule(
+                    day = day,
+                    index = index,
+                    schedule = schedule.copy(id = id)
+                )
+            }
         }
     }
 
@@ -105,7 +124,9 @@ class ScheduleViewModel @Inject constructor(
         Log.d("ScheduleViewModel", "insertShift")
         viewModelScope.launch {
             val id = _repository.insertShift(shift)
-            _state.addShift(shift.copy(id = id))
+            if (shift.id == null) {
+                _state.addShift(shift.copy(id = id))
+            }
         }
     }
 

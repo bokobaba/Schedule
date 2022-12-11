@@ -11,8 +11,10 @@ import com.love.schedule.feature_employees.domain.model.Employee
 import com.love.schedule.feature_employees.domain.model.InvalidEmployeeException
 import com.love.schedule.feature_employees.domain.repository.IEmployeeRepository
 import com.love.schedule.model.employee.IEmployeesState
+import com.love.schedule.model.employee.IEmployeesViewState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -27,18 +29,43 @@ class EmployeesViewModel @Inject constructor(
     private var getEmployeesJob: Job? = null
     private var recentlyDeletedEmployee: Employee? = null
     private var _loading = mutableStateOf(false)
+    private val _eventFlow = MutableSharedFlow<UiEvent>()
 
-    val state: IEmployeesState
+    val state: IEmployeesViewState
         get() = _state
 
     val loading: MutableState<Boolean>
         get() = _loading
 
+    val eventFlow: MutableSharedFlow<UiEvent>
+        get() = _eventFlow
+
     init {
         getEmployees()
-        _state.addEmployee = { addEmployee(it) }
-        _state.deleteEmployee = { deleteEmployee(it) }
-        _state.restoreEmployee = { restoreEmployee() }
+//        _state.addEmployee = { addEmployee(it) }
+//        _state.deleteEmployee = { deleteEmployee(it) }
+//        _state.restoreEmployee = { restoreEmployee() }
+    }
+
+    fun onEvent(event: EmployeeListEvent) {
+        when (event) {
+            is EmployeeListEvent.DeleteEmployee -> {
+                val toDelete: Employee? = _state.employeeToDelete.value
+                if (toDelete != null)
+                    deleteEmployee(toDelete)
+                _state.cancelDelete()
+
+            }
+            is EmployeeListEvent.CancelDelete -> _state.cancelDelete()
+            is EmployeeListEvent.LongPressEmployee -> _state.onLongPressEmployee(event.employee)
+            is EmployeeListEvent.SelectEmployee -> viewModelScope.launch {
+                _eventFlow.emit(UiEvent.SelectEmployee(event.employee))
+            }
+            is EmployeeListEvent.AddEmployee -> viewModelScope.launch {
+                _eventFlow.emit(UiEvent.AddEmployee)
+            }
+
+        }
     }
 
     @Throws(InvalidEmployeeException::class)
@@ -79,5 +106,10 @@ class EmployeesViewModel @Inject constructor(
                 _loading.value = false
             }
             .launchIn(viewModelScope)
+    }
+
+    sealed class UiEvent {
+        data class SelectEmployee(val employee: Employee) : UiEvent()
+        object AddEmployee: UiEvent()
     }
 }

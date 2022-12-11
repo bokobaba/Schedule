@@ -13,3 +13,5 @@
 .externalNativeBuild
 .cxx
 local.properties
+auth0.properties
+auth0Test.properties

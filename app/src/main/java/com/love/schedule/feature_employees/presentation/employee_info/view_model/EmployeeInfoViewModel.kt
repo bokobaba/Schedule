@@ -143,11 +143,13 @@ class EmployeeInfoViewModel @Inject constructor(
             if (it.day > Days.values().size || it.day < 0) {
                 throw InvalidAvailabilityException("Invalid day for Availability found")
             }
-            if (it.enabled && it.start.isBlank()) {
-                throw InvalidAvailabilityException("Availability for ${Days.get(it.day)} has no start time")
-            }
-            if (it.enabled && it.end.isBlank()) {
-                throw InvalidAvailabilityException("Availability for ${Days.get(it.day)} has no end time")
+            if (it.enabled && !it.allDay) {
+                if (it.start.isBlank()) {
+                    throw InvalidAvailabilityException("Availability for ${Days.get(it.day)} has no start time")
+                }
+                if (it.end.isBlank()) {
+                    throw InvalidAvailabilityException("Availability for ${Days.get(it.day)} has no end time")
+                }
             }
 
             it.copy(

@@ -2,7 +2,6 @@ package com.love.schedule.feature_employees.presentation.employees
 
 import android.util.Log
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -13,7 +12,6 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -21,15 +19,13 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
+import com.love.schedule.core.component.*
 import com.love.schedule.feature_employees.domain.model.Employee
 import com.love.schedule.model.employee.EmployeesState
-import com.love.schedule.model.employee.IEmployeesState
+import com.love.schedule.model.employee.IEmployeesViewState
 import com.love.schedule.navigation.Screen
-import com.love.schedule.core.component.FlipAnimation
-import com.love.schedule.core.component.FlipState
-import com.love.schedule.core.component.LoadingAnimation
 import com.love.schedule.ui.theme.ScheduleTheme
+import kotlinx.coroutines.flow.collectLatest
 
 internal val spacing: Dp = 10.dp
 
@@ -38,14 +34,34 @@ fun EmployeeListScreen(
     navController: NavController,
     vm: EmployeesViewModel = hiltViewModel()
 ) {
-    EmployeeList(vm.loading, navController, vm.state)
+    EmployeeList(
+        loading = vm.loading,
+        state = vm.state,
+        onEvent = vm::onEvent
+
+    )
+
+    LaunchedEffect(key1 = true) {
+        vm.eventFlow.collectLatest { event ->
+            when (event) {
+                is EmployeesViewModel.UiEvent.SelectEmployee -> {
+                    navController.navigate(
+                        route = Screen.EmployeeInfo.passEmployee("${event.employee.id}")
+                    )
+                }
+                is EmployeesViewModel.UiEvent.AddEmployee -> {
+                    navController.navigate(route = Screen.EmployeeInfo.route)
+                }
+            }
+        }
+    }
 }
 
 @Composable
 fun EmployeeList(
     loading: MutableState<Boolean> = mutableStateOf(false),
-    navController: NavController,
-    state: IEmployeesState
+    state: IEmployeesViewState,
+    onEvent: (EmployeeListEvent) -> Unit,
 ) {
     Log.d("EmployeeList", "init")
     val scaffoldState = rememberScaffoldState()
@@ -56,44 +72,42 @@ fun EmployeeList(
             TopAppBar(
                 navigationIcon = {
                     CancelDeleteButton(
-                        toDelete = state.employeeToDelete,
-                        onClick = state::cancelDelete
+                        visible = state.employeeToDelete.value != null,
+                        onClick = { onEvent(EmployeeListEvent.CancelDelete) }
                     )
                 },
                 title = { Text("Employees") },
                 actions = {
                     DeleteButton(
-                        toDelete = state.employeeToDelete,
-                        onDelete = state.deleteEmployee
+                        visible = state.employeeToDelete.value != null,
+                        onDelete = { onEvent(EmployeeListEvent.DeleteEmployee) }
                     )
                 }
             )
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = {
-                    navController.navigate(route = Screen.EmployeeInfo.route)
-                },
+                onClick = { onEvent(EmployeeListEvent.AddEmployee) },
                 backgroundColor = MaterialTheme.colors.primary
             ) {
                 Icon(imageVector = Icons.Default.Add, contentDescription = "Add employee")
             }
         },
         scaffoldState = scaffoldState
-    ) {
+    ) { padding ->
         if (loading.value) {
             LoadingAnimation()
         } else {
             LazyColumn(
-                modifier = Modifier.fillMaxHeight(),
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .padding(padding),
                 verticalArrangement = Arrangement.spacedBy(spacing),
             ) {
                 items(state.employees) { employee ->
                     EmployeeItem(
                         employee = employee,
-                        navController = navController,
-                        onTap = state::onSelectEmployee,
-                        onLongPress = state::onLongPressEmployee,
+                        onEvent = onEvent,
                         employeeToDelete = state.employeeToDelete
                     )
                     Divider()
@@ -104,61 +118,30 @@ fun EmployeeList(
 }
 
 @Composable
-fun CancelDeleteButton(
-    toDelete: MutableState<Employee?>,
-    onClick: () -> Unit
-) {
-    Log.d("CancelDeleteButton", "init")
-    val employee: Employee = toDelete.value ?: return
-    if (toDelete.value != null) {
-        Icon(
-            modifier = Modifier.clickable {
-                onClick()
-            },
-            imageVector = Icons.Default.ArrowBack,
-            contentDescription = "delete employee"
-        )
-    }
-}
-
-@Composable
-fun DeleteButton(toDelete: MutableState<Employee?>, onDelete: (Employee) -> Unit) {
-    Log.d("DeleteButton", "init")
-    val employee: Employee = toDelete.value ?: return
-    if (toDelete.value != null) {
-        Button(
-            onClick = { onDelete(employee) }
-        ) {
-            Icon(imageVector = Icons.Default.Delete, contentDescription = "delete employee")
-        }
-    }
-}
-
-@Composable
 fun EmployeeItem(
     employee: Employee,
     employeeToDelete: MutableState<Employee?>,
-    navController: NavController,
-    onTap: (Employee, NavController) -> Unit,
-    onLongPress: (Employee) -> Unit,
+    onEvent: (EmployeeListEvent) -> Unit,
 ) {
     Log.d("EmployeeItem", "name = ${employee.name}")
     val markedForDelete = employeeToDelete.value?.employeeId == employee.employeeId
-    val modifier: Modifier = if (markedForDelete) Modifier.background(Color.Red) else Modifier
-    Row(
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
+    val modifier: Modifier = if (markedForDelete)
+        Modifier.background(MaterialTheme.colors.secondary)
+    else
+        Modifier
+    Box(
         modifier = modifier
             .fillMaxWidth()
-//            .padding(spacing)
             .pointerInput(Unit) {
                 detectTapGestures(
-                    onTap = { onTap(employee, navController) },
-                    onLongPress = { onLongPress(employee) }
+                    onTap = { onEvent(EmployeeListEvent.SelectEmployee(employee)) },
+                    onLongPress = { onEvent(EmployeeListEvent.LongPressEmployee(employee)) }
                 )
             }
     ) {
-        Box(modifier = Modifier.weight(1f)) {
+        Box(
+            modifier = Modifier.align(Alignment.CenterStart)
+        ) {
             FlipAnimation(
                 state = if (markedForDelete) FlipState.BACK else FlipState.FRONT,
                 backModifier = Modifier.background(color = MaterialTheme.colors.primary),
@@ -173,11 +156,13 @@ fun EmployeeItem(
         }
         Text(
             textAlign = TextAlign.Center,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .align(Alignment.Center)
+                .fillMaxWidth(0.8f),
             text = employee.name,
-            style = MaterialTheme.typography.h4
+            style = MaterialTheme.typography.h4,
+            maxLines = 1
         )
-        Box(modifier = Modifier.weight(1f))
     }
 }
 
@@ -186,8 +171,8 @@ fun EmployeeItem(
 fun DefaultPreview() {
     ScheduleTheme {
         EmployeeList(
-            navController = rememberNavController(),
-            state = EmployeesState.previewActions
+            state = EmployeesState.previewState,
+            onEvent = {},
         )
     }
 }
